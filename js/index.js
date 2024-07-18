@@ -29,13 +29,13 @@ start.addEventListener("click",()=>{
   console.log(index);
   
     if(index<images.length){
-      console.log("image is successfully displayed")
+      window.prompt("image is successfully displayed")
       const image1 = document.getElementById("image1");
       image1.src = images[index];
     }
     else
     {
-      console.log("displaying of image is unsuccessful")
+      window.prompt("displaying of image is unsuccessful")
     }
   })
 
