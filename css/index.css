@@ -1,0 +1,75 @@
+
+/* the basic setup before performing any css styling */
+
+*{
+    magin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+h1
+{
+    text-align:center;
+}
+
+body{
+    font-family:monospace;
+    min-height:100vh;
+   margin:0;
+    display:flex;
+    
+   
+    
+    flex-flow:column wrap;
+}
+
+.img_container{
+    border:2px solid black;
+    min-width:100px;
+
+    margin-inline:auto; /*centers the div*/
+    border-radius:2em;
+    
+    display:flex;
+    
+    justify-content:space-evenly;
+
+    /* align items vertically */
+   
+   
+    /* flex-direction:row-reverse;
+    flex-wrap:wrap; this helps to keep the flex items inside the div container 
+    flex flow will combine the powers of both flex direction and flex wrap
+    */
+    flex-flow:row wrap;
+    gap:1rem;
+    padding:1rem;
+    
+
+}
+
+
+img{
+    border:2px solid plum;
+    border-radius:3em;
+    min-width: 281px;
+    width:50vh;
+}
+
+input{
+    padding:0.2em;
+    height:30px;
+    min-width:60px;
+    border-radius:0.7em;
+    border:2px solid palevioletred
+}
+.btn_container{
+    border:2px solid pink;
+    border-radius:0.5em;
+    padding:1rem;
+    height:100px;
+    min-width:100px;
+    display:flex;
+    flex-flow:row wrap;
+    gap:1em;
+
+}
