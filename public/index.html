@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Viewer with Improved Lighting</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block; /* Ensures the canvas takes up the full screen */
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="modelViewer"></canvas>
+
+<!-- Include Three.js from CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<!-- Include GLTFLoader -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<!-- Include OrbitControls -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<script>
+    // Create scene, camera, and renderer
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('modelViewer'), antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    // Set a white background color
+    scene.background = new THREE.Color(0xffffff); // White background
+    renderer.setClearColor(0xffffff); // Clear color for the renderer
+
+    // Add a Hemisphere Light (simulates sunlight and sky light)
+    const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1); // Sky color, ground color, intensity
+    scene.add(hemisphereLight);
+
+    // Add a Directional Light (simulates sunlight)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // White light, intensity
+    directionalLight.position.set(5, 10, 7.5).normalize(); // Position the light
+    scene.add(directionalLight);
+
+    // Load the 3D model
+    const loader = new THREE.GLTFLoader();
+    loader.load('./models/pl1.glb', (gltf) => {
+        const model = gltf.scene;
+
+        // Traverse all children and set their material to double-sided
+        model.traverse((child) => {
+            if (child.isMesh) {
+                child.material.side = THREE.DoubleSide; // Enable double-sided rendering
+            }
+        });
+
+        model.scale.set(1, 1, 1);
+        model.position.set(0, 0, 0);
+        scene.add(model);
+
+        // Start animation loop
+        const animate = function () {
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        };
+        animate();
+    }, undefined, (error) => {
+        console.error('An error occurred while loading the model:', error);
+    });
+
+    // Set camera position
+    camera.position.set(0, 0, 5);
+
+    // Set up OrbitControls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.25;
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Model Viewer with Improved Lighting</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+      }
+      canvas {
+        display: block; /* Ensures the canvas takes up the full screen */
+      }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="bg-purple-200 min-h-screen flex flex-col items-center justify-center p-4"
+  >
+    <canvas
+      id="modelViewer"
+      class="w-full h-auto max-h-2000 bg-gray-200 shadow-lg rounded-xl border border-gray-300"
+    ></canvas>
+
+    <button
+      id="signout"
+      class="w-full bg-red-500 text-white py-2 px-4 rounded-md shadow hover:bg-red-600 transition-all"
+    >
+      Sign out
+    </button>
+    <!-- <h1>Voice Input Example</h1>
+    <button id="start-record-btn">Start Recording</button>
+    <p>Recognized text: <span id="recognized-text"></span></p> -->
+
+    <!-- <form id="voice-form" method="POST" action="/submit">
+      <input type="hidden" name="transcription" id="transcription" />
+      <button type="submit">Submit</button>
+    </form> -->
+    <div
+      id="controls"
+      class="mt-6 w-full max-w-lg flex flex-col items-center space-y-4"
+    >
+      <input
+        type="text"
+        id="user-input"
+        placeholder="Enter your input"
+        class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
+      <button
+        id="next-btn"
+        class="w-full bg-blue-500 text-white py-2 px-4 rounded-md shadow hover:bg-blue-600 transition-all"
+      >
+        Next Model
+      </button>
+
+      <button
+        id="submit-btn"
+        style="display: none"
+        class="w-full bg-green-500 text-white py-2 px-4 rounded-md shadow hover:bg-green-600 transition-all"
+      >
+        Submit
+      </button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+      const models = <%- JSON.stringify(models) %>;
+      console.log(`Models loaded from server: ${models}`);
+      let userResponses = [];
+      let currentIndex = 0;
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('modelViewer'), antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      scene.background = new THREE.Color(0xffffff);
+      renderer.setClearColor(0xffffff);
+
+      const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+      scene.add(hemisphereLight);
+
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+      directionalLight.position.set(5, 10, 7.5).normalize();
+      scene.add(directionalLight);
+
+      let currentModel = null;
+
+      const minScale = 0.5; // Minimum scale factor
+
+      function loadModel(model) {
+        const loader = new THREE.GLTFLoader();
+        loader.load(model.path, (gltf) => {
+          if (currentModel) {
+            scene.remove(currentModel);
+          }
+
+          const model = gltf.scene;
+          model.traverse((child) => {
+            if (child.isMesh) {
+              child.material.side = THREE.DoubleSide;
+            }
+          });
+
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+          const maxDimension = Math.max(size.x, size.y, size.z);
+
+          const scale = Math.max(minScale, 1 / maxDimension);
+          model.scale.set(scale, scale, scale);
+
+          model.position.set(0, 0, 0);
+          scene.add(model);
+          currentModel = model;
+
+          const center = box.getCenter(new THREE.Vector3());
+          model.position.sub(center);
+
+          // Adjust camera distance to zoom in more
+          camera.position.z = Math.max(maxDimension * scale * 0.5, 3); // Zoomed in by 2 times
+
+          const animate = function () {
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+          };
+          animate();
+        }, undefined, (error) => {
+          console.error('An error occurred while loading the model:', error);
+        });
+      }
+
+      function nextModel() {
+        const inputField = document.getElementById("user-input");
+
+        // Check if browser supports the Web Speech API
+     
+          const userInput = inputField.value.trim();
+
+          if (userInput) {
+            userResponses[currentIndex] = {
+              plateNo: models[currentIndex].plateNo,
+              answer: userInput
+            };
+            inputField.value = "";
+          }
+
+          console.log(userResponses);
+          currentIndex++;
+
+          if (currentIndex === models.length - 1) {
+            document.getElementById("next-btn").style.display = "none";
+            document.getElementById("submit-btn").style.display = "inline";
+          }
+          loadModel(models[currentIndex]);
+
+        }
+      
+
+
+      function submitResponses() {
+        const inputField = document.getElementById("user-input");
+
+        // Check if browser supports the Web Speech API
+       
+          const userInput = inputField.value.trim();
+
+          if (userInput) {
+            userResponses[currentIndex] = {
+              plateNo: models[currentIndex].plateNo,
+              answer: userInput
+            };
+            inputField.value = "";
+          }
+
+        
+
+        console.log("Final user responses:", userResponses);
+
+        fetch("/submit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ responses: userResponses }),
+        })
+        .then((response) => response.json())
+        .then((data) => {
+          alert(`Blindness Type : ${data.blindnessType}  Intensity : ${data.intensity}`);
+        })
+        .catch((error) => console.error("Error submitting responses:", error));
+      }
+
+      camera.position.set(0, 0, 5);
+
+      const controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.25;
+
+      window.addEventListener("resize", () => {
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        renderer.setSize(width, height);
+        camera.aspect = width / height;
+        camera.updateProjectionMatrix();
+      });
+
+      loadModel(models[currentIndex]);
+
+      document.getElementById("next-btn").addEventListener("click", nextModel);
+      document.getElementById("submit-btn").addEventListener("click", submitResponses);
+      document.getElementById("signout").addEventListener("click", () => {
+      fetch("/", {
+        method: "GET",
+      })
+      .then(response => {
+        if (response.ok) {
+        window.location.href = "/"; // Redirect to login page after sign out
+        } else {
+        alert("Sign out failed.");
+        }
+      })
+      .catch(error => console.error("Error during sign out:", error));
+      });
+    </script>
+  </body>
+</html>
