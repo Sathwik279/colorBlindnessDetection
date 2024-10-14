@@ -2,55 +2,102 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3D Model Viewer with Improved Lighting</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>3D Model Viewer with Improved Lighting and Device Orientation</title>
     <style>
       body {
         margin: 0;
         overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #e9d8fd;
+        min-height: 100vh;
       }
+
       canvas {
-        display: block; /* Ensures the canvas takes up the full screen */
+        display: block;
+        width: 100%;
+        height: 100%;
+        max-width: 1200px; /* Max width for large screens */
+        max-height: 800px; /* Adjust the height for landscape */
+        background-color: #f3f4f6;
+        border-radius: 10px;
+        border: 1px solid #d1d5db;
+      }
+
+      /* Responsive layout for buttons and controls */
+      #controls {
+        margin-top: 10px;
+        width: 100%;
+        max-width: 600px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 10px;
+        font-size: 1rem;
+      }
+
+      input {
+        width: 100%;
+        padding: 12px;
+        font-size: 1rem;
+      }
+
+      /* Media queries for responsive adjustments */
+      @media screen and (max-width: 768px) {
+        canvas {
+          max-width: 100%;
+          max-height: 400px; /* Reduced height for smaller landscape view */
+        }
+
+        input, button {
+          padding: 10px;
+          font-size: 0.9rem;
+        }
+      }
+
+      @media screen and (orientation: landscape) and (max-width: 600px) {
+        canvas {
+          max-height: 300px;
+        }
       }
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body
-    class="bg-purple-200 min-h-screen flex flex-col items-center justify-center p-4"
-  >
+  <body>
     <canvas
       id="modelViewer"
-      class="w-full h-auto max-h-2000 bg-gray-200 shadow-lg rounded-xl border border-gray-300"
+      class="bg-gray-200 shadow-lg rounded-xl border border-gray-300"
     ></canvas>
 
     <button
       id="signout"
-      class="w-full bg-red-500 text-white py-2 px-4 rounded-md shadow hover:bg-red-600 transition-all"
+      class="bg-red-500 text-white py-2 px-4 rounded-md shadow hover:bg-red-600 transition-all"
     >
       Sign out
     </button>
-    <!-- <h1>Voice Input Example</h1>
-    <button id="start-record-btn">Start Recording</button>
-    <p>Recognized text: <span id="recognized-text"></span></p> -->
 
-    <!-- <form id="voice-form" method="POST" action="/submit">
-      <input type="hidden" name="transcription" id="transcription" />
-      <button type="submit">Submit</button>
-    </form> -->
-    <div
-      id="controls"
-      class="mt-6 w-full max-w-lg flex flex-col items-center space-y-4"
-    >
+    <div id="controls" class="flex flex-col items-center space-y-4">
       <input
         type="text"
         id="user-input"
         placeholder="Enter your input"
-        class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
 
       <button
         id="next-btn"
-        class="w-full bg-blue-500 text-white py-2 px-4 rounded-md shadow hover:bg-blue-600 transition-all"
+        class="bg-blue-500 text-white py-2 px-4 rounded-md shadow hover:bg-blue-600 transition-all"
       >
         Next Model
       </button>
@@ -58,7 +105,7 @@
       <button
         id="submit-btn"
         style="display: none"
-        class="w-full bg-green-500 text-white py-2 px-4 rounded-md shadow hover:bg-green-600 transition-all"
+        class="bg-green-500 text-white py-2 px-4 rounded-md shadow hover:bg-green-600 transition-all"
       >
         Submit
       </button>
@@ -70,13 +117,20 @@
 
     <script>
       const models = <%- JSON.stringify(models) %>;
-      console.log(`Models loaded from server: ${models}`);
       let userResponses = [];
       let currentIndex = 0;
 
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('modelViewer'), antialias: true });
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      const renderer = new THREE.WebGLRenderer({
+        canvas: document.getElementById("modelViewer"),
+        antialias: true,
+      });
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
@@ -91,94 +145,86 @@
       scene.add(directionalLight);
 
       let currentModel = null;
-
-      const minScale = 0.5; // Minimum scale factor
+      const minScale = 0.5;
 
       function loadModel(model) {
         const loader = new THREE.GLTFLoader();
-        loader.load(model.path, (gltf) => {
-          if (currentModel) {
-            scene.remove(currentModel);
-          }
-
-          const model = gltf.scene;
-          model.traverse((child) => {
-            if (child.isMesh) {
-              child.material.side = THREE.DoubleSide;
+        loader.load(
+          model.path,
+          (gltf) => {
+            if (currentModel) {
+              scene.remove(currentModel);
             }
-          });
 
-          const box = new THREE.Box3().setFromObject(model);
-          const size = box.getSize(new THREE.Vector3());
-          const maxDimension = Math.max(size.x, size.y, size.z);
+            const model = gltf.scene;
+            model.traverse((child) => {
+              if (child.isMesh) {
+                child.material.side = THREE.DoubleSide;
+              }
+            });
 
-          const scale = Math.max(minScale, 1 / maxDimension);
-          model.scale.set(scale, scale, scale);
+            const box = new THREE.Box3().setFromObject(model);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDimension = Math.max(size.x, size.y, size.z);
 
-          model.position.set(0, 0, 0);
-          scene.add(model);
-          currentModel = model;
+            const scale = Math.max(minScale, 1 / maxDimension);
+            model.scale.set(scale, scale, scale);
 
-          const center = box.getCenter(new THREE.Vector3());
-          model.position.sub(center);
+            model.position.set(0, 0, 0);
+            scene.add(model);
+            currentModel = model;
 
-          // Adjust camera distance to zoom in more
-          camera.position.z = Math.max(maxDimension * scale * 0.5, 3); // Zoomed in by 2 times
+            const center = box.getCenter(new THREE.Vector3());
+            model.position.sub(center);
 
-          const animate = function () {
-            renderer.render(scene, camera);
-            requestAnimationFrame(animate);
-          };
-          animate();
-        }, undefined, (error) => {
-          console.error('An error occurred while loading the model:', error);
-        });
+            camera.position.z = Math.max(maxDimension * scale * 0.5, 3);
+
+            const animate = function () {
+              renderer.render(scene, camera);
+              requestAnimationFrame(animate);
+            };
+            animate();
+          },
+          undefined,
+          (error) => {
+            console.error("An error occurred while loading the model:", error);
+          }
+        );
       }
 
       function nextModel() {
         const inputField = document.getElementById("user-input");
 
-        // Check if browser supports the Web Speech API
-     
-          const userInput = inputField.value.trim();
-
-          if (userInput) {
-            userResponses[currentIndex] = {
-              plateNo: models[currentIndex].plateNo,
-              answer: userInput
-            };
-            inputField.value = "";
-          }
-
-          console.log(userResponses);
-          currentIndex++;
-
-          if (currentIndex === models.length - 1) {
-            document.getElementById("next-btn").style.display = "none";
-            document.getElementById("submit-btn").style.display = "inline";
-          }
-          loadModel(models[currentIndex]);
-
+        const userInput = inputField.value.trim();
+        if (userInput) {
+          userResponses[currentIndex] = {
+            plateNo: models[currentIndex].plateNo,
+            answer: userInput,
+          };
+          inputField.value = "";
         }
-      
 
+        console.log(userResponses);
+        currentIndex++;
+
+        if (currentIndex === models.length - 1) {
+          document.getElementById("next-btn").style.display = "none";
+          document.getElementById("submit-btn").style.display = "inline";
+        }
+        loadModel(models[currentIndex]);
+      }
 
       function submitResponses() {
         const inputField = document.getElementById("user-input");
 
-        // Check if browser supports the Web Speech API
-       
-          const userInput = inputField.value.trim();
-
-          if (userInput) {
-            userResponses[currentIndex] = {
-              plateNo: models[currentIndex].plateNo,
-              answer: userInput
-            };
-            inputField.value = "";
-          }
-
-        
+        const userInput = inputField.value.trim();
+        if (userInput) {
+          userResponses[currentIndex] = {
+            plateNo: models[currentIndex].plateNo,
+            answer: userInput,
+          };
+          inputField.value = "";
+        }
 
         console.log("Final user responses:", userResponses);
 
@@ -189,11 +235,11 @@
           },
           body: JSON.stringify({ responses: userResponses }),
         })
-        .then((response) => response.json())
-        .then((data) => {
-          alert(`Blindness Type : ${data.blindnessType}  Intensity : ${data.intensity}`);
-        })
-        .catch((error) => console.error("Error submitting responses:", error));
+          .then((response) => response.json())
+          .then((data) => {
+            alert(`Blindness Type : ${data.blindnessType}  Intensity : ${data.intensity}`);
+          })
+          .catch((error) => console.error("Error submitting responses:", error));
       }
 
       camera.position.set(0, 0, 5);
@@ -215,38 +261,35 @@
       document.getElementById("next-btn").addEventListener("click", nextModel);
       document.getElementById("submit-btn").addEventListener("click", submitResponses);
       document.getElementById("signout").addEventListener("click", () => {
-      fetch("/", {
-        method: "GET",
-      })
-      .then(response => {
-        if (response.ok) {
-        window.location.href = "/"; // Redirect to login page after sign out
-        } else {
-        alert("Sign out failed.");
-        }
-      })
-      .catch(error => console.error("Error during sign out:", error));
+        fetch("/", {
+          method: "GET",
+        })
+          .then((response) => {
+            if (response.ok) {
+              window.location.href = "/";
+            } else {
+              alert("Sign out failed.");
+            }
+          })
+          .catch((error) => console.error("Error during sign out:", error));
       });
 
+      // Handling device orientation
       function handleOrientation(event) {
-        const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;  // Rotation around z-axis
-        const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;    // Rotation around x-axis
-        const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;  // Rotation around y-axis
+        const alpha = event.alpha
+          ? THREE.Math.degToRad(event.alpha)
+          : 0;
+        const beta = event.beta
+          ? THREE.Math.degToRad(event.beta)
+          : 0;
+        const gamma = event.gamma
+          ? THREE.Math.degToRad(event.gamma)
+          : 0;
 
-        // Apply rotations to the 3D model
-        if (currentModel) {
-          currentModel.rotation.order = "YXZ"; // Ensure correct rotation order
-          currentModel.rotation.x = beta;      // Tilt up/down
-          currentModel.rotation.y = gamma;     // Tilt left/right
-          currentModel.rotation.z = alpha;     // Spin around
-        }
+        camera.rotation.set(beta, gamma, alpha);
       }
 
-      if (window.DeviceOrientationEvent) {
-        window.addEventListener("deviceorientation", handleOrientation, true);
-      } else {
-        console.log("Device orientation is not supported on this device.");
-      }
+      window.addEventListener("deviceorientation", handleOrientation);
     </script>
   </body>
 </html>
