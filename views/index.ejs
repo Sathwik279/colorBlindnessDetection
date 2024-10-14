@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3D Model Viewer with Improved Lighting</title>
+    <title>3D Model Viewer with Improved Lighting and Device Orientation</title>
     <style>
       body {
         margin: 0;
@@ -60,7 +60,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/DeviceOrientationControls.js"></script>
 
     <script>
       const models = <%- JSON.stringify(models) %>;
@@ -85,8 +84,7 @@
       scene.add(directionalLight);
 
       let currentModel = null;
-
-      const minScale = 0.5; // Minimum scale factor
+      const minScale = 0.5;
 
       function loadModel(model) {
         const loader = new THREE.GLTFLoader();
@@ -116,8 +114,7 @@
           const center = box.getCenter(new THREE.Vector3());
           model.position.sub(center);
 
-          // Adjust camera distance to zoom in more
-          camera.position.z = Math.max(maxDimension * scale * 0.5, 3); // Zoomed in by 2 times
+          camera.position.z = Math.max(maxDimension * scale * 0.5, 3);
 
           const animate = function () {
             renderer.render(scene, camera);
@@ -133,7 +130,6 @@
         const inputField = document.getElementById("user-input");
 
         const userInput = inputField.value.trim();
-
         if (userInput) {
           userResponses[currentIndex] = {
             plateNo: models[currentIndex].plateNo,
@@ -156,7 +152,6 @@
         const inputField = document.getElementById("user-input");
 
         const userInput = inputField.value.trim();
-
         if (userInput) {
           userResponses[currentIndex] = {
             plateNo: models[currentIndex].plateNo,
@@ -187,15 +182,6 @@
       controls.enableDamping = true;
       controls.dampingFactor = 0.25;
 
-      // Device Orientation Control
-      const deviceOrientationControls = new THREE.DeviceOrientationControls(camera);
-      function render() {
-        deviceOrientationControls.update();
-        controls.update();
-        renderer.render(scene, camera);
-        requestAnimationFrame(render);
-      }
-
       window.addEventListener("resize", () => {
         const width = window.innerWidth;
         const height = window.innerHeight;
@@ -214,7 +200,7 @@
         })
         .then(response => {
           if (response.ok) {
-            window.location.href = "/"; // Redirect to login page after sign out
+            window.location.href = "/";
           } else {
             alert("Sign out failed.");
           }
@@ -222,7 +208,26 @@
         .catch(error => console.error("Error during sign out:", error));
       });
 
-      render(); // Start the rendering loop
+      // Handling device orientation
+      function handleOrientation(event) {
+        const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;  // Rotation around z-axis
+        const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;    // Rotation around x-axis
+        const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;  // Rotation around y-axis
+
+        // Apply rotations to the 3D model
+        if (currentModel) {
+          currentModel.rotation.order = "YXZ"; // Ensure correct rotation order
+          currentModel.rotation.x = beta;      // Tilt up/down
+          currentModel.rotation.y = gamma;     // Tilt left/right
+          currentModel.rotation.z = alpha;     // Spin around
+        }
+      }
+
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener("deviceorientation", handleOrientation, true);
+      } else {
+        console.log("Device orientation is not supported on this device.");
+      }
     </script>
   </body>
 </html>
