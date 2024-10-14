@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3D Model Viewer with Improved Lighting and Device Orientation</title>
+    <title>3D Model Viewer with Improved Lighting</title>
     <style>
       body {
         margin: 0;
@@ -27,9 +27,16 @@
       id="signout"
       class="w-full bg-red-500 text-white py-2 px-4 rounded-md shadow hover:bg-red-600 transition-all"
     >
-      Sign out  
+      Sign out
     </button>
+    <!-- <h1>Voice Input Example</h1>
+    <button id="start-record-btn">Start Recording</button>
+    <p>Recognized text: <span id="recognized-text"></span></p> -->
 
+    <!-- <form id="voice-form" method="POST" action="/submit">
+      <input type="hidden" name="transcription" id="transcription" />
+      <button type="submit">Submit</button>
+    </form> -->
     <div
       id="controls"
       class="mt-6 w-full max-w-lg flex flex-col items-center space-y-4"
@@ -84,7 +91,8 @@
       scene.add(directionalLight);
 
       let currentModel = null;
-      const minScale = 0.5;
+
+      const minScale = 0.5; // Minimum scale factor
 
       function loadModel(model) {
         const loader = new THREE.GLTFLoader();
@@ -114,7 +122,8 @@
           const center = box.getCenter(new THREE.Vector3());
           model.position.sub(center);
 
-          camera.position.z = Math.max(maxDimension * scale * 0.5, 3);
+          // Adjust camera distance to zoom in more
+          camera.position.z = Math.max(maxDimension * scale * 0.5, 3); // Zoomed in by 2 times
 
           const animate = function () {
             renderer.render(scene, camera);
@@ -129,36 +138,47 @@
       function nextModel() {
         const inputField = document.getElementById("user-input");
 
-        const userInput = inputField.value.trim();
-        if (userInput) {
-          userResponses[currentIndex] = {
-            plateNo: models[currentIndex].plateNo,
-            answer: userInput
-          };
-          inputField.value = "";
-        }
+        // Check if browser supports the Web Speech API
+     
+          const userInput = inputField.value.trim();
 
-        console.log(userResponses);
-        currentIndex++;
+          if (userInput) {
+            userResponses[currentIndex] = {
+              plateNo: models[currentIndex].plateNo,
+              answer: userInput
+            };
+            inputField.value = "";
+          }
 
-        if (currentIndex === models.length - 1) {
-          document.getElementById("next-btn").style.display = "none";
-          document.getElementById("submit-btn").style.display = "inline";
+          console.log(userResponses);
+          currentIndex++;
+
+          if (currentIndex === models.length - 1) {
+            document.getElementById("next-btn").style.display = "none";
+            document.getElementById("submit-btn").style.display = "inline";
+          }
+          loadModel(models[currentIndex]);
+
         }
-        loadModel(models[currentIndex]);
-      }
+      
+
 
       function submitResponses() {
         const inputField = document.getElementById("user-input");
 
-        const userInput = inputField.value.trim();
-        if (userInput) {
-          userResponses[currentIndex] = {
-            plateNo: models[currentIndex].plateNo,
-            answer: userInput
-          };
-          inputField.value = "";
-        }
+        // Check if browser supports the Web Speech API
+       
+          const userInput = inputField.value.trim();
+
+          if (userInput) {
+            userResponses[currentIndex] = {
+              plateNo: models[currentIndex].plateNo,
+              answer: userInput
+            };
+            inputField.value = "";
+          }
+
+        
 
         console.log("Final user responses:", userResponses);
 
@@ -195,39 +215,18 @@
       document.getElementById("next-btn").addEventListener("click", nextModel);
       document.getElementById("submit-btn").addEventListener("click", submitResponses);
       document.getElementById("signout").addEventListener("click", () => {
-        fetch("/", {
-          method: "GET",
-        })
-        .then(response => {
-          if (response.ok) {
-            window.location.href = "/";
-          } else {
-            alert("Sign out failed.");
-          }
-        })
-        .catch(error => console.error("Error during sign out:", error));
-      });
-
-      // Handling device orientation
-      function handleOrientation(event) {
-        const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;  // Rotation around z-axis
-        const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;    // Rotation around x-axis
-        const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;  // Rotation around y-axis
-
-        // Apply rotations to the 3D model
-        if (currentModel) {
-          currentModel.rotation.order = "YXZ"; // Ensure correct rotation order
-          currentModel.rotation.x = beta;      // Tilt up/down
-          currentModel.rotation.y = gamma;     // Tilt left/right
-          currentModel.rotation.z = alpha;     // Spin around
+      fetch("/", {
+        method: "GET",
+      })
+      .then(response => {
+        if (response.ok) {
+        window.location.href = "/"; // Redirect to login page after sign out
+        } else {
+        alert("Sign out failed.");
         }
-      }
-
-      if (window.DeviceOrientationEvent) {
-        window.addEventListener("deviceorientation", handleOrientation, true);
-      } else {
-        console.log("Device orientation is not supported on this device.");
-      }
+      })
+      .catch(error => console.error("Error during sign out:", error));
+      });
     </script>
   </body>
 </html>
