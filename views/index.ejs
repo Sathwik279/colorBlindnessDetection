@@ -227,6 +227,26 @@
       })
       .catch(error => console.error("Error during sign out:", error));
       });
+
+      function handleOrientation(event) {
+        const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;  // Rotation around z-axis
+        const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;    // Rotation around x-axis
+        const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;  // Rotation around y-axis
+
+        // Apply rotations to the 3D model
+        if (currentModel) {
+          currentModel.rotation.order = "YXZ"; // Ensure correct rotation order
+          currentModel.rotation.x = beta;      // Tilt up/down
+          currentModel.rotation.y = gamma;     // Tilt left/right
+          currentModel.rotation.z = alpha;     // Spin around
+        }
+      }
+
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener("deviceorientation", handleOrientation, true);
+      } else {
+        console.log("Device orientation is not supported on this device.");
+      }
     </script>
   </body>
 </html>
