@@ -269,6 +269,34 @@
         })
         .catch((error) => console.error("Error during sign out:", error));
       });
+
+            function handleOrientation(event) {
+        // Get the orientation angles from the device
+        const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;
+        const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;
+        const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;
+
+        if (currentModel) {
+          currentModel.rotation.order = "YXZ";
+
+          // Rotate the model based on landscape orientation (gamma for sideways tilt)
+          if (window.innerWidth > window.innerHeight) { // Detects landscape mode
+            currentModel.rotation.x = beta; // Adjust rotation based on device tilt
+            currentModel.rotation.z = -gamma; // Use gamma for left/right tilt
+          } else {
+            currentModel.rotation.x = gamma; // Adjust rotation based on device tilt
+            currentModel.rotation.z = alpha; // Use alpha for left/right tilt
+          }
+        }
+      }
+
+      // Listen for device orientation events
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener("deviceorientation", handleOrientation, true);
+      } else {
+        console.log("Device orientation is not supported on this device.");
+      }
+
     </script>
   </body>
 </html>
