@@ -29,14 +29,7 @@
     >
       Sign out
     </button>
-    <!-- <h1>Voice Input Example</h1>
-    <button id="start-record-btn">Start Recording</button>
-    <p>Recognized text: <span id="recognized-text"></span></p> -->
 
-    <!-- <form id="voice-form" method="POST" action="/submit">
-      <input type="hidden" name="transcription" id="transcription" />
-      <button type="submit">Submit</button>
-    </form> -->
     <div
       id="controls"
       class="mt-6 w-full max-w-lg flex flex-col items-center space-y-4"
@@ -67,6 +60,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/DeviceOrientationControls.js"></script>
 
     <script>
       const models = <%- JSON.stringify(models) %>;
@@ -138,47 +132,38 @@
       function nextModel() {
         const inputField = document.getElementById("user-input");
 
-        // Check if browser supports the Web Speech API
-     
-          const userInput = inputField.value.trim();
+        const userInput = inputField.value.trim();
 
-          if (userInput) {
-            userResponses[currentIndex] = {
-              plateNo: models[currentIndex].plateNo,
-              answer: userInput
-            };
-            inputField.value = "";
-          }
-
-          console.log(userResponses);
-          currentIndex++;
-
-          if (currentIndex === models.length - 1) {
-            document.getElementById("next-btn").style.display = "none";
-            document.getElementById("submit-btn").style.display = "inline";
-          }
-          loadModel(models[currentIndex]);
-
+        if (userInput) {
+          userResponses[currentIndex] = {
+            plateNo: models[currentIndex].plateNo,
+            answer: userInput
+          };
+          inputField.value = "";
         }
-      
 
+        console.log(userResponses);
+        currentIndex++;
+
+        if (currentIndex === models.length - 1) {
+          document.getElementById("next-btn").style.display = "none";
+          document.getElementById("submit-btn").style.display = "inline";
+        }
+        loadModel(models[currentIndex]);
+      }
 
       function submitResponses() {
         const inputField = document.getElementById("user-input");
 
-        // Check if browser supports the Web Speech API
-       
-          const userInput = inputField.value.trim();
+        const userInput = inputField.value.trim();
 
-          if (userInput) {
-            userResponses[currentIndex] = {
-              plateNo: models[currentIndex].plateNo,
-              answer: userInput
-            };
-            inputField.value = "";
-          }
-
-        
+        if (userInput) {
+          userResponses[currentIndex] = {
+            plateNo: models[currentIndex].plateNo,
+            answer: userInput
+          };
+          inputField.value = "";
+        }
 
         console.log("Final user responses:", userResponses);
 
@@ -202,6 +187,15 @@
       controls.enableDamping = true;
       controls.dampingFactor = 0.25;
 
+      // Device Orientation Control
+      const deviceOrientationControls = new THREE.DeviceOrientationControls(camera);
+      function render() {
+        deviceOrientationControls.update();
+        controls.update();
+        renderer.render(scene, camera);
+        requestAnimationFrame(render);
+      }
+
       window.addEventListener("resize", () => {
         const width = window.innerWidth;
         const height = window.innerHeight;
@@ -215,18 +209,20 @@
       document.getElementById("next-btn").addEventListener("click", nextModel);
       document.getElementById("submit-btn").addEventListener("click", submitResponses);
       document.getElementById("signout").addEventListener("click", () => {
-      fetch("/", {
-        method: "GET",
-      })
-      .then(response => {
-        if (response.ok) {
-        window.location.href = "/"; // Redirect to login page after sign out
-        } else {
-        alert("Sign out failed.");
-        }
-      })
-      .catch(error => console.error("Error during sign out:", error));
+        fetch("/", {
+          method: "GET",
+        })
+        .then(response => {
+          if (response.ok) {
+            window.location.href = "/"; // Redirect to login page after sign out
+          } else {
+            alert("Sign out failed.");
+          }
+        })
+        .catch(error => console.error("Error during sign out:", error));
       });
+
+      render(); // Start the rendering loop
     </script>
   </body>
 </html>
