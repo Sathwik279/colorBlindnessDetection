@@ -257,19 +257,19 @@
       }
     });
 
-    function handleOrientation(event) {
-      const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;
-      const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;
-      const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;
+    // function handleOrientation(event) {
+    //   const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;
+    //   const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;
+    //   const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;
 
-      leftCamera.rotation.set(beta, alpha, -gamma);
-      rightCamera.rotation.set(beta, alpha, -gamma);
-    }
+    //   leftCamera.rotation.set(beta, alpha, -gamma);
+    //   rightCamera.rotation.set(beta, alpha, -gamma);
+    // }
 
-    window.addEventListener("deviceorientation", handleOrientation, true);
+    // window.addEventListener("deviceorientation", handleOrientation, true);
     
-    document.getElementById("next-btn").addEventListener("click", nextModel);
-    document.getElementById("submit-btn").addEventListener("click", submitResponses);
+    // document.getElementById("next-btn").addEventListener("click", nextModel);
+    // document.getElementById("submit-btn").addEventListener("click", submitResponses);
 
     loadModel(models[currentIndex]);
   </script>
