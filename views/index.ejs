@@ -23,8 +23,7 @@
         gap: 8px;
         pointer-events: none;
       }
-      .corner-buttons button,
-      .corner-buttons input {
+      .corner-buttons button, .corner-buttons input {
         pointer-events: auto;
         width: 50px;
         height: 50px;
@@ -43,13 +42,52 @@
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
   <body class="bg-purple-200 min-h-screen flex flex-col items-center justify-center p-4">
-    <canvas id="modelViewer" class="w-full h-auto max-h-2000 bg-gray-200 shadow-lg rounded-xl border border-gray-300"></canvas>
+    <canvas
+      id="modelViewer"
+      class="w-full h-auto max-h-2000 bg-gray-200 shadow-lg rounded-xl border border-gray-300"
+    ></canvas>
 
     <div class="corner-buttons">
-      <button id="fullscreen-btn" class="bg-blue-500 text-white small-btn shadow hover:bg-blue-600 transition-all" title="Fullscreen">FS</button>
-      <button id="signout" class="bg-red-500 text-white small-btn shadow hover:bg-red-600 transition-all" title="Sign Out">SO</button>
-      <input type="text" id="user-input" placeholder="Input" class="p-2 border border-gray-300 rounded-md shadow-sm text-center w-12" title="User Input" />
-      <button id="submit-btn" style="display: none" class="bg-green-500 text-white small-btn shadow hover:bg-green-600 transition-all" title="Submit">Sub</button>
+      <button
+        id="fullscreen-btn"
+        class="bg-blue-500 text-white small-btn shadow hover:bg-blue-600 transition-all"
+        title="Fullscreen"
+      >
+        FS
+      </button>
+
+      <button
+        id="signout"
+        class="bg-red-500 text-white small-btn shadow hover:bg-red-600 transition-all"
+        title="Sign Out"
+      >
+        SO
+      </button>
+
+      <input
+        type="text"
+        id="user-input"
+        placeholder="Input"
+        class="p-2 border border-gray-300 rounded-md shadow-sm text-center w-12"
+        title="User Input"
+      />
+
+      <button
+        id="next-btn"
+        class="bg-blue-500 text-white small-btn shadow hover:bg-blue-600 transition-all"
+        title="Next"
+      >
+        Next
+      </button>
+
+      <button
+        id="submit-btn"
+        style="display: none"
+        class="bg-green-500 text-white small-btn shadow hover:bg-green-600 transition-all"
+        title="Submit"
+      >
+        Sub
+      </button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -134,11 +172,11 @@
         currentIndex++;
 
         if (currentIndex === models.length - 1) {
+          document.getElementById("next-btn").style.display = "none";
           document.getElementById("submit-btn").style.display = "inline";
-          submitResponses(); // Auto-submit at the last model
-        } else {
-          loadModel(models[currentIndex]);
         }
+
+        loadModel(models[currentIndex]);
       }
 
       function submitResponses() {
@@ -195,83 +233,94 @@
         }
       });
 
-      // Orientation Handling
-    // Update the handleOrientation function to adjust the model rotation based on orientation
-        function handleOrientation(event) {
-            const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0; // Rotation around the Z-axis
-            const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;     // Rotation around the X-axis
-            const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0; // Rotation around the Y-axis
+      function handleOrientation(event) {
+        const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;
+        const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;
+        const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;
 
-            if (currentModel) {
-                currentModel.rotation.order = "YXZ";
-                
-                // Rotate the model based on the device orientation
-                // You can adjust the factors below to get the desired rotation effect
-                currentModel.rotation.x = beta;   // Adjust rotation based on beta
-                currentModel.rotation.y = gamma;   // Adjust rotation based on gamma
-                currentModel.rotation.z = alpha;   // Adjust rotation based on alpha
-            }
+        if (currentModel) {
+          currentModel.rotation.order = "YXZ";
+          currentModel.rotation.x = beta;
+          currentModel.rotation.y = gamma;
+          currentModel.rotation.z = alpha;
         }
+      }
 
-        function updateModelOrientation() {
-            if (window.matchMedia("(orientation: landscape)").matches) {
-                if (currentModel) {
-                    // If in landscape mode, rotate the model further for a better view
-                    currentModel.rotation.x = 0; // Reset rotation for landscape
-                    currentModel.rotation.y = Math.PI / 4; // Rotate for better view in landscape
-                }
-            } else {
-                if (currentModel) {
-                    // Reset the rotation for portrait mode
-                    currentModel.rotation.x = 0; 
-                    currentModel.rotation.y = 0; 
-                }
-            }
-        }
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener("deviceorientation", handleOrientation, true);
+      } else {
+        console.log("Device orientation is not supported on this device.");
+      }
 
-        // Add event listeners to handle device orientation and resize
-        if (window.DeviceOrientationEvent) {
-            window.addEventListener("deviceorientation", handleOrientation, true);
-            window.addEventListener("resize", updateModelOrientation);
-        } else {
-            console.log("Device orientation is not supported on this device.");
-        }
-
-      // Continuous Voice Recognition
-      function startContinuousRecognition() {
+        function startContinuousRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
-        recognition.interimResults = true;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
 
         recognition.onresult = (event) => {
-          const transcript = event.results[event.resultIndex][0].transcript;
-          document.getElementById("user-input").value = transcript;
+          let transcript = event.results[0][0].transcript.trim().toLowerCase();
+          document.getElementById('user-input').value = transcript;
+          nextModel();
         };
 
         recognition.onerror = (event) => {
-          console.error('Speech recognition error:', event.error);
+          console.error("Voice recognition error:", event.error);
+        };
+
+        recognition.onend = () => {
+          recognition.start(); // Restart recognition after it ends
         };
 
         recognition.start();
       }
 
-      const signoutButton = document.getElementById("signout");
-      signoutButton.addEventListener("click", () => {
-        // Implement sign-out logic here
-        console.log("Sign out button clicked");
-      });
-
-      const submitButton = document.getElementById("submit-btn");
-      submitButton.addEventListener("click", submitResponses);
-
-      const inputField = document.getElementById("user-input");
-      inputField.addEventListener("keypress", (event) => {
-        if (event.key === "Enter") {
-          nextModel();
-        }
-      });
-
       loadModel(models[currentIndex]);
+      startContinuousRecognition();
+
+      document.getElementById("next-btn").addEventListener("click", nextModel);
+      document.getElementById("submit-btn").addEventListener("click", submitResponses);
+      document.getElementById("signout").addEventListener("click", () => {
+        fetch("/", {
+          method: "GET",
+        })
+        .then((response) => {
+          if (response.ok) {
+            window.location.href = "/"; // Redirect to login page after sign out
+          } else {
+            alert("Sign out failed.");
+          }
+        })
+        .catch((error) => console.error("Error during sign out:", error));
+      });
+
+            function handleOrientation(event) {
+        // Get the orientation angles from the device
+        const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;
+        const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;
+        const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;
+
+        if (currentModel) {
+          currentModel.rotation.order = "YXZ";
+
+          // Rotate the model based on landscape orientation (gamma for sideways tilt)
+          if (window.innerWidth > window.innerHeight) { // Detects landscape mode
+            currentModel.rotation.x = beta; // Adjust rotation based on device tilt
+            currentModel.rotation.z = -gamma; // Use gamma for left/right tilt
+          } else {
+            currentModel.rotation.x = gamma; // Adjust rotation based on device tilt
+            currentModel.rotation.z = alpha; // Use alpha for left/right tilt
+          }
+        }
+      }
+
+      // Listen for device orientation events
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener("deviceorientation", handleOrientation, true);
+      } else {
+        console.log("Device orientation is not supported on this device.");
+      }
+
     </script>
   </body>
 </html>
