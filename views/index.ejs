@@ -23,7 +23,8 @@
         gap: 8px;
         pointer-events: none;
       }
-      .corner-buttons button, .corner-buttons input {
+      .corner-buttons button,
+      .corner-buttons input {
         pointer-events: auto;
         width: 50px;
         height: 50px;
@@ -41,7 +42,9 @@
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body class="bg-purple-200 min-h-screen flex flex-col items-center justify-center p-4">
+  <body
+    class="bg-purple-200 min-h-screen flex flex-col items-center justify-center p-4"
+  >
     <canvas
       id="modelViewer"
       class="w-full h-auto max-h-2000 bg-gray-200 shadow-lg rounded-xl border border-gray-300"
@@ -225,6 +228,27 @@
           }
         }
       });
+
+      //orientation
+      function handleOrientation(event) {
+        const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;
+        const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;
+        const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;
+
+        if (currentModel) {
+          currentModel.rotation.order = "YXZ";
+          currentModel.rotation.x = beta;
+          currentModel.rotation.y = gamma;
+          currentModel.rotation.z = alpha;
+        }
+      }
+
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener("deviceorientation", handleOrientation, true);
+      } else {
+        console.log("Device orientation is not supported on this device.");
+      }
+
 
       // Continuous Voice Recognition
       function startContinuousRecognition() {
