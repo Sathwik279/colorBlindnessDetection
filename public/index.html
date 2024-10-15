@@ -3,65 +3,53 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3D Model Viewer with Improved Lighting</title>
+    <title>3D Model Viewer with Fullscreen and Improved Lighting</title>
     <style>
       body {
         margin: 0;
         overflow: hidden;
+        position: relative;
       }
       canvas {
-        display: block; /* Ensures the canvas takes up the full screen */
+        display: block;
+      }
+      .corner-buttons {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+        pointer-events: none;
+      }
+      .corner-buttons button,
+      .corner-buttons input {
+        pointer-events: auto;
+        width: 50px;
+        height: 50px;
+        font-size: 12px;
+        padding: 4px;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+      .small-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 10px;
+        padding: 4px;
       }
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body
-    class="bg-purple-200 min-h-screen flex flex-col items-center justify-center p-4"
-  >
-    <canvas
-      id="modelViewer"
-      class="w-full h-auto max-h-2000 bg-gray-200 shadow-lg rounded-xl border border-gray-300"
-    ></canvas>
+  <body class="bg-purple-200 min-h-screen flex flex-col items-center justify-center p-4">
+    <canvas id="modelViewer" class="w-full h-auto max-h-2000 bg-gray-200 shadow-lg rounded-xl border border-gray-300"></canvas>
 
-    <button
-      id="signout"
-      class="w-full bg-red-500 text-white py-2 px-4 rounded-md shadow hover:bg-red-600 transition-all"
-    >
-      Sign out
-    </button>
-    <!-- <h1>Voice Input Example</h1>
-    <button id="start-record-btn">Start Recording</button>
-    <p>Recognized text: <span id="recognized-text"></span></p> -->
-
-    <!-- <form id="voice-form" method="POST" action="/submit">
-      <input type="hidden" name="transcription" id="transcription" />
-      <button type="submit">Submit</button>
-    </form> -->
-    <div
-      id="controls"
-      class="mt-6 w-full max-w-lg flex flex-col items-center space-y-4"
-    >
-      <input
-        type="text"
-        id="user-input"
-        placeholder="Enter your input"
-        class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-
-      <button
-        id="next-btn"
-        class="w-full bg-blue-500 text-white py-2 px-4 rounded-md shadow hover:bg-blue-600 transition-all"
-      >
-        Next Model
-      </button>
-
-      <button
-        id="submit-btn"
-        style="display: none"
-        class="w-full bg-green-500 text-white py-2 px-4 rounded-md shadow hover:bg-green-600 transition-all"
-      >
-        Submit
-      </button>
+    <div class="corner-buttons">
+      <button id="fullscreen-btn" class="bg-blue-500 text-white small-btn shadow hover:bg-blue-600 transition-all" title="Fullscreen">FS</button>
+      <button id="signout" class="bg-red-500 text-white small-btn shadow hover:bg-red-600 transition-all" title="Sign Out">SO</button>
+      <input type="text" id="user-input" placeholder="Input" class="p-2 border border-gray-300 rounded-md shadow-sm text-center w-12" title="User Input" />
+      <button id="submit-btn" style="display: none" class="bg-green-500 text-white small-btn shadow hover:bg-green-600 transition-all" title="Submit">Sub</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -70,7 +58,6 @@
 
     <script>
       const models = <%- JSON.stringify(models) %>;
-      console.log(`Models loaded from server: ${models}`);
       let userResponses = [];
       let currentIndex = 0;
 
@@ -92,8 +79,6 @@
 
       let currentModel = null;
 
-      const minScale = 0.5; // Minimum scale factor
-
       function loadModel(model) {
         const loader = new THREE.GLTFLoader();
         loader.load(model.path, (gltf) => {
@@ -112,7 +97,7 @@
           const size = box.getSize(new THREE.Vector3());
           const maxDimension = Math.max(size.x, size.y, size.z);
 
-          const scale = Math.max(minScale, 1 / maxDimension);
+          const scale = Math.max(0.5, 1 / maxDimension);
           model.scale.set(scale, scale, scale);
 
           model.position.set(0, 0, 0);
@@ -122,8 +107,7 @@
           const center = box.getCenter(new THREE.Vector3());
           model.position.sub(center);
 
-          // Adjust camera distance to zoom in more
-          camera.position.z = Math.max(maxDimension * scale * 0.5, 3); // Zoomed in by 2 times
+          camera.position.z = Math.max(maxDimension * scale * 0.5, 3);
 
           const animate = function () {
             renderer.render(scene, camera);
@@ -137,50 +121,37 @@
 
       function nextModel() {
         const inputField = document.getElementById("user-input");
+        const userInput = inputField.value.trim();
 
-        // Check if browser supports the Web Speech API
-     
-          const userInput = inputField.value.trim();
-
-          if (userInput) {
-            userResponses[currentIndex] = {
-              plateNo: models[currentIndex].plateNo,
-              answer: userInput
-            };
-            inputField.value = "";
-          }
-
-          console.log(userResponses);
-          currentIndex++;
-
-          if (currentIndex === models.length - 1) {
-            document.getElementById("next-btn").style.display = "none";
-            document.getElementById("submit-btn").style.display = "inline";
-          }
-          loadModel(models[currentIndex]);
-
+        if (userInput) {
+          userResponses[currentIndex] = {
+            plateNo: models[currentIndex].plateNo,
+            answer: userInput
+          };
+          inputField.value = "";
         }
-      
 
+        currentIndex++;
+
+        if (currentIndex === models.length - 1) {
+          document.getElementById("submit-btn").style.display = "inline";
+          submitResponses(); // Auto-submit at the last model
+        } else {
+          loadModel(models[currentIndex]);
+        }
+      }
 
       function submitResponses() {
         const inputField = document.getElementById("user-input");
+        const userInput = inputField.value.trim();
 
-        // Check if browser supports the Web Speech API
-       
-          const userInput = inputField.value.trim();
-
-          if (userInput) {
-            userResponses[currentIndex] = {
-              plateNo: models[currentIndex].plateNo,
-              answer: userInput
-            };
-            inputField.value = "";
-          }
-
-        
-
-        console.log("Final user responses:", userResponses);
+        if (userInput) {
+          userResponses[currentIndex] = {
+            plateNo: models[currentIndex].plateNo,
+            answer: userInput
+          };
+          inputField.value = "";
+        }
 
         fetch("/submit", {
           method: "POST",
@@ -191,13 +162,12 @@
         })
         .then((response) => response.json())
         .then((data) => {
-          alert(`Blindness Type : ${data.blindnessType}  Intensity : ${data.intensity}`);
+          alert(`Blindness Type: ${data.blindnessType}, Intensity: ${data.intensity}`);
         })
         .catch((error) => console.error("Error submitting responses:", error));
       }
 
       camera.position.set(0, 0, 5);
-
       const controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.25;
@@ -210,23 +180,91 @@
         camera.updateProjectionMatrix();
       });
 
-      loadModel(models[currentIndex]);
+      // Fullscreen functionality
+      const fullscreenButton = document.getElementById("fullscreen-btn");
 
-      document.getElementById("next-btn").addEventListener("click", nextModel);
-      document.getElementById("submit-btn").addEventListener("click", submitResponses);
-      document.getElementById("signout").addEventListener("click", () => {
-      fetch("/", {
-        method: "GET",
-      })
-      .then(response => {
-        if (response.ok) {
-        window.location.href = "/"; // Redirect to login page after sign out
+      fullscreenButton.addEventListener("click", () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen();
+          fullscreenButton.textContent = "Exit Fullscreen";
         } else {
-        alert("Sign out failed.");
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+            fullscreenButton.textContent = "Enter Fullscreen";
+          }
         }
-      })
-      .catch(error => console.error("Error during sign out:", error));
       });
+
+      // Orientation Handling
+      function handleOrientation(event) {
+        const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;
+        const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;
+        const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;
+
+        if (currentModel) {
+          currentModel.rotation.order = "YXZ";
+          currentModel.rotation.x = beta;
+          currentModel.rotation.y = gamma;
+          currentModel.rotation.z = alpha;
+        }
+      }
+
+      function updateModelOrientation() {
+        if (window.matchMedia("(orientation: landscape)").matches) {
+          if (currentModel) {
+            currentModel.rotation.x = 0; // Adjust rotation for landscape
+            currentModel.rotation.y = Math.PI / 4; // Rotate for better view in landscape
+          }
+        } else {
+          if (currentModel) {
+            currentModel.rotation.x = 0; // Reset rotation for portrait
+            currentModel.rotation.y = 0; // Reset for default view
+          }
+        }
+      }
+
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener("deviceorientation", handleOrientation, true);
+        window.addEventListener("resize", updateModelOrientation);
+      } else {
+        console.log("Device orientation is not supported on this device.");
+      }
+
+      // Continuous Voice Recognition
+      function startContinuousRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.interimResults = true;
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[event.resultIndex][0].transcript;
+          document.getElementById("user-input").value = transcript;
+        };
+
+        recognition.onerror = (event) => {
+          console.error('Speech recognition error:', event.error);
+        };
+
+        recognition.start();
+      }
+
+      const signoutButton = document.getElementById("signout");
+      signoutButton.addEventListener("click", () => {
+        // Implement sign-out logic here
+        console.log("Sign out button clicked");
+      });
+
+      const submitButton = document.getElementById("submit-btn");
+      submitButton.addEventListener("click", submitResponses);
+
+      const inputField = document.getElementById("user-input");
+      inputField.addEventListener("keypress", (event) => {
+        if (event.key === "Enter") {
+          nextModel();
+        }
+      });
+
+      loadModel(models[currentIndex]);
     </script>
   </body>
 </html>
