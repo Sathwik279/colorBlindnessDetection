@@ -42,48 +42,14 @@
     </style>
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body
-    class="bg-purple-200 min-h-screen flex flex-col items-center justify-center p-4"
-  >
-    <canvas
-      id="modelViewer"
-      class="w-full h-auto max-h-2000 bg-gray-200 shadow-lg rounded-xl border border-gray-300"
-    ></canvas>
+  <body class="bg-purple-200 min-h-screen flex flex-col items-center justify-center p-4">
+    <canvas id="modelViewer" class="w-full h-auto max-h-2000 bg-gray-200 shadow-lg rounded-xl border border-gray-300"></canvas>
 
     <div class="corner-buttons">
-      <button
-        id="fullscreen-btn"
-        class="bg-blue-500 text-white small-btn shadow hover:bg-blue-600 transition-all"
-        title="Fullscreen"
-      >
-        FS
-      </button>
-
-      <button
-        id="signout"
-        class="bg-red-500 text-white small-btn shadow hover:bg-red-600 transition-all"
-        title="Sign Out"
-      >
-        SO
-      </button>
-
-      <!-- Text input -->
-      <input
-        type="text"
-        id="user-input"
-        placeholder="Input"
-        class="p-2 border border-gray-300 rounded-md shadow-sm text-center w-12"
-        title="User Input"
-      />
-
-      <button
-        id="submit-btn"
-        style="display: none"
-        class="bg-green-500 text-white small-btn shadow hover:bg-green-600 transition-all"
-        title="Submit"
-      >
-        Sub
-      </button>
+      <button id="fullscreen-btn" class="bg-blue-500 text-white small-btn shadow hover:bg-blue-600 transition-all" title="Fullscreen">FS</button>
+      <button id="signout" class="bg-red-500 text-white small-btn shadow hover:bg-red-600 transition-all" title="Sign Out">SO</button>
+      <input type="text" id="user-input" placeholder="Input" class="p-2 border border-gray-300 rounded-md shadow-sm text-center w-12" title="User Input" />
+      <button id="submit-btn" style="display: none" class="bg-green-500 text-white small-btn shadow hover:bg-green-600 transition-all" title="Submit">Sub</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -229,7 +195,7 @@
         }
       });
 
-      //orientation
+      // Orientation Handling
       function handleOrientation(event) {
         const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;
         const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;
@@ -243,42 +209,62 @@
         }
       }
 
+      function updateModelOrientation() {
+        if (window.matchMedia("(orientation: landscape)").matches) {
+          if (currentModel) {
+            currentModel.rotation.x = 0; // Adjust rotation for landscape
+            currentModel.rotation.y = Math.PI / 4; // Rotate for better view in landscape
+          }
+        } else {
+          if (currentModel) {
+            currentModel.rotation.x = 0; // Reset rotation for portrait
+            currentModel.rotation.y = 0; // Reset for default view
+          }
+        }
+      }
+
       if (window.DeviceOrientationEvent) {
         window.addEventListener("deviceorientation", handleOrientation, true);
+        window.addEventListener("resize", updateModelOrientation);
       } else {
         console.log("Device orientation is not supported on this device.");
       }
-
 
       // Continuous Voice Recognition
       function startContinuousRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
-        recognition.interimResults = false;
-        recognition.lang = 'en-US';
+        recognition.interimResults = true;
 
         recognition.onresult = (event) => {
-          let transcript = event.results[0][0].transcript.trim().toLowerCase();
-          console.log(`transcript ${transcript}`);
-          document.getElementById('user-input').value = transcript;
-          nextModel();
+          const transcript = event.results[event.resultIndex][0].transcript;
+          document.getElementById("user-input").value = transcript;
         };
 
         recognition.onerror = (event) => {
-          console.error("Voice recognition error:", event.error);
-        };
-
-        recognition.onend = () => {
-          recognition.start(); // Restart recognition after it ends
+          console.error('Speech recognition error:', event.error);
         };
 
         recognition.start();
       }
 
-      document.getElementById("submit-btn").addEventListener("click", submitResponses);
+      const signoutButton = document.getElementById("signout");
+      signoutButton.addEventListener("click", () => {
+        // Implement sign-out logic here
+        console.log("Sign out button clicked");
+      });
+
+      const submitButton = document.getElementById("submit-btn");
+      submitButton.addEventListener("click", submitResponses);
+
+      const inputField = document.getElementById("user-input");
+      inputField.addEventListener("keypress", (event) => {
+        if (event.key === "Enter") {
+          nextModel();
+        }
+      });
 
       loadModel(models[currentIndex]);
-      startContinuousRecognition(); // Start voice recognition when page loads
     </script>
   </body>
 </html>
