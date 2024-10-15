@@ -3,92 +3,175 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3D Model Viewer with Improved Lighting</title>
+    <title>3D Model Viewer with Fullscreen and Improved Lighting</title>
     <style>
       body {
         margin: 0;
         overflow: hidden;
+        position: relative;
       }
       canvas {
-        display: block; /* Ensures the canvas takes up the full screen */
+        display: block;
+      }
+      .corner-buttons {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+        pointer-events: none;
+      }
+      .corner-buttons button,
+      .corner-buttons input {
+        pointer-events: auto;
+        width: 50px;
+        height: 50px;
+        font-size: 12px;
+        padding: 4px;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+      .small-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 10px;
+        padding: 4px;
       }
     </style>
+    <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body>
-    <canvas id="modelViewer"></canvas>
+  <body class="bg-purple-200 min-h-screen flex flex-col items-center justify-center p-4">
+    <canvas id="modelViewer" class="w-full h-auto max-h-2000 bg-gray-200 shadow-lg rounded-xl border border-gray-300"></canvas>
 
-    <!-- Include Three.js from CDN -->
+    <div class="corner-buttons">
+      <button id="fullscreen-btn" class="bg-blue-500 text-white small-btn shadow hover:bg-blue-600 transition-all" title="Fullscreen">FS</button>
+      <button id="signout" class="bg-red-500 text-white small-btn shadow hover:bg-red-600 transition-all" title="Sign Out">SO</button>
+      <input type="text" id="user-input" placeholder="Input" class="p-2 border border-gray-300 rounded-md shadow-sm text-center w-12" title="User Input" />
+      <button id="submit-btn" style="display: none" class="bg-green-500 text-white small-btn shadow hover:bg-green-600 transition-all" title="Submit">Sub</button>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Include GLTFLoader -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <!-- Include OrbitControls -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
-      // Create scene, camera, and renderer
+      const models = <%- JSON.stringify(models) %>;
+      let userResponses = [];
+      let currentIndex = 0;
+
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(
-        75,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        1000
-      );
-      const renderer = new THREE.WebGLRenderer({
-        canvas: document.getElementById("modelViewer"),
-        antialias: true,
-      });
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('modelViewer'), antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
-      // Add a Hemisphere Light (simulates sunlight and sky light)
-      const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1); // Sky color, ground color, intensity
+      scene.background = new THREE.Color(0xffffff);
+      renderer.setClearColor(0xffffff);
+
+      const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
       scene.add(hemisphereLight);
 
-      // Add a Directional Light (simulates sunlight)
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 1); // White light, intensity
-      directionalLight.position.set(5, 10, 7.5).normalize(); // Position the light
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+      directionalLight.position.set(5, 10, 7.5).normalize();
       scene.add(directionalLight);
 
-      // Load the 3D model
-      const loader = new THREE.GLTFLoader();
-      loader.load(
-        "./models/pl8.glb",
-        (gltf) => {
-          const model = gltf.scene;
+      let currentModel = null;
 
-          // Traverse all children and set their material to double-sided
+      function loadModel(model) {
+        const loader = new THREE.GLTFLoader();
+        loader.load(model.path, (gltf) => {
+          if (currentModel) {
+            scene.remove(currentModel);
+          }
+
+          const model = gltf.scene;
           model.traverse((child) => {
             if (child.isMesh) {
-              child.material.side = THREE.DoubleSide; // Enable double-sided rendering
+              child.material.side = THREE.DoubleSide;
             }
           });
 
-          model.scale.set(1, 1, 1);
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+          const maxDimension = Math.max(size.x, size.y, size.z);
+
+          const scale = Math.max(0.5, 1 / maxDimension);
+          model.scale.set(scale, scale, scale);
+
           model.position.set(0, 0, 0);
           scene.add(model);
+          currentModel = model;
 
-          // Start animation loop
+          const center = box.getCenter(new THREE.Vector3());
+          model.position.sub(center);
+
+          camera.position.z = Math.max(maxDimension * scale * 0.5, 3);
+
           const animate = function () {
             renderer.render(scene, camera);
             requestAnimationFrame(animate);
           };
           animate();
-        },
-        undefined,
-        (error) => {
-          console.error("An error occurred while loading the model:", error);
+        }, undefined, (error) => {
+          console.error('An error occurred while loading the model:', error);
+        });
+      }
+
+      function nextModel() {
+        const inputField = document.getElementById("user-input");
+        const userInput = inputField.value.trim();
+
+        if (userInput) {
+          userResponses[currentIndex] = {
+            plateNo: models[currentIndex].plateNo,
+            answer: userInput
+          };
+          inputField.value = "";
         }
-      );
 
-      // Set camera position
+        currentIndex++;
+
+        if (currentIndex === models.length - 1) {
+          document.getElementById("submit-btn").style.display = "inline";
+          submitResponses(); // Auto-submit at the last model
+        } else {
+          loadModel(models[currentIndex]);
+        }
+      }
+
+      function submitResponses() {
+        const inputField = document.getElementById("user-input");
+        const userInput = inputField.value.trim();
+
+        if (userInput) {
+          userResponses[currentIndex] = {
+            plateNo: models[currentIndex].plateNo,
+            answer: userInput
+          };
+          inputField.value = "";
+        }
+
+        fetch("/submit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ responses: userResponses }),
+        })
+        .then((response) => response.json())
+        .then((data) => {
+          alert(`Blindness Type: ${data.blindnessType}, Intensity: ${data.intensity}`);
+        })
+        .catch((error) => console.error("Error submitting responses:", error));
+      }
+
       camera.position.set(0, 0, 5);
-
-      // Set up OrbitControls
       const controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.25;
 
-      // Handle window resize
       window.addEventListener("resize", () => {
         const width = window.innerWidth;
         const height = window.innerHeight;
@@ -96,6 +179,92 @@
         camera.aspect = width / height;
         camera.updateProjectionMatrix();
       });
+
+      // Fullscreen functionality
+      const fullscreenButton = document.getElementById("fullscreen-btn");
+
+      fullscreenButton.addEventListener("click", () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen();
+          fullscreenButton.textContent = "Exit Fullscreen";
+        } else {
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+            fullscreenButton.textContent = "Enter Fullscreen";
+          }
+        }
+      });
+
+      // Orientation Handling
+      function handleOrientation(event) {
+        const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;
+        const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;
+        const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;
+
+        if (currentModel) {
+          currentModel.rotation.order = "YXZ";
+          currentModel.rotation.x = beta;
+          currentModel.rotation.y = gamma;
+          currentModel.rotation.z = alpha;
+        }
+      }
+
+      function updateModelOrientation() {
+        if (window.matchMedia("(orientation: landscape)").matches) {
+          if (currentModel) {
+            currentModel.rotation.x = 0; // Adjust rotation for landscape
+            currentModel.rotation.y = Math.PI / 4; // Rotate for better view in landscape
+          }
+        } else {
+          if (currentModel) {
+            currentModel.rotation.x = 0; // Reset rotation for portrait
+            currentModel.rotation.y = 0; // Reset for default view
+          }
+        }
+      }
+
+      if (window.DeviceOrientationEvent) {
+        window.addEventListener("deviceorientation", handleOrientation, true);
+        window.addEventListener("resize", updateModelOrientation);
+      } else {
+        console.log("Device orientation is not supported on this device.");
+      }
+
+      // Continuous Voice Recognition
+      function startContinuousRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+          console.error("Speech recognition is not supported by this browser.");
+          return;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;  // Keep listening until stopped
+        recognition.interimResults = true;  // Get interim results before final recognition
+
+        recognition.onresult = (event) => {
+          const transcript = event.results[event.resultIndex][0].transcript;
+          console.log(`transcript: ${transcript}`);
+          document.getElementById("user-input").value = transcript;
+        };
+
+        recognition.onerror = (event) => {
+          console.error('Speech recognition error:', event.error);
+        };
+
+        recognition.onend = () => {
+          // Restart recognition automatically
+          recognition.start();
+        };
+
+        recognition.start();  // Start recognition
+      }
+
+      window.onload = () => {
+        startContinuousRecognition();  // Auto-start voice recognition on page load
+        loadModel(models[0]); // Load the first model when the page loads
+      };
     </script>
   </body>
 </html>

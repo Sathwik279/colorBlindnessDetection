@@ -25,7 +25,7 @@ const allModels = [
   { plateNo: "PL1", path: "./glbModels/pl1.glb", answer: "12" },
   { plateNo: "PL2", path: "./glbModels/pl2.glb", answer: "8" },
   { plateNo: "PL3", path: "./glbModels/pl3.glb", answer: "6" },
-  { plateNo: "PL4", path: "./glbMpl13odels/pl4.glb", answer: "29" },
+  { plateNo: "PL4", path: "./glbModels/pl4.glb", answer: "29" },
   { plateNo: "PL5", path: "./glbModels/pl5.glb", answer: "57" },
   { plateNo: "PL6", path: "./glbModels/pl6.glb", answer: "5" },
   { plateNo: "PL7", path: "./glbModels/pl7.glb", answer: "3" },
