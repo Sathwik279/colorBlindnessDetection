@@ -64,6 +64,7 @@
         SO
       </button>
 
+      <!-- Text input -->
       <input
         type="text"
         id="user-input"
@@ -71,14 +72,6 @@
         class="p-2 border border-gray-300 rounded-md shadow-sm text-center w-12"
         title="User Input"
       />
-
-      <button
-        id="next-btn"
-        class="bg-blue-500 text-white small-btn shadow hover:bg-blue-600 transition-all"
-        title="Next"
-      >
-        Next
-      </button>
 
       <button
         id="submit-btn"
@@ -172,11 +165,11 @@
         currentIndex++;
 
         if (currentIndex === models.length - 1) {
-          document.getElementById("next-btn").style.display = "none";
           document.getElementById("submit-btn").style.display = "inline";
+          submitResponses(); // Auto-submit at the last model
+        } else {
+          loadModel(models[currentIndex]);
         }
-
-        loadModel(models[currentIndex]);
       }
 
       function submitResponses() {
@@ -233,70 +226,35 @@
         }
       });
 
-      function handleOrientation(event) {
-        const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;
-        const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;
-        const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;
+      // Continuous Voice Recognition
+      function startContinuousRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
 
-        if (currentModel) {
-          currentModel.rotation.order = "YXZ";
-          currentModel.rotation.x = beta;
-          currentModel.rotation.y = gamma;
-          currentModel.rotation.z = alpha;
-        }
+        recognition.onresult = (event) => {
+          let transcript = event.results[0][0].transcript.trim().toLowerCase();
+          console.log(`transcript ${transcript}`);
+          document.getElementById('user-input').value = transcript;
+          nextModel();
+        };
+
+        recognition.onerror = (event) => {
+          console.error("Voice recognition error:", event.error);
+        };
+
+        recognition.onend = () => {
+          recognition.start(); // Restart recognition after it ends
+        };
+
+        recognition.start();
       }
 
-      if (window.DeviceOrientationEvent) {
-        window.addEventListener("deviceorientation", handleOrientation, true);
-      } else {
-        console.log("Device orientation is not supported on this device.");
-      }
+      document.getElementById("submit-btn").addEventListener("click", submitResponses);
 
       loadModel(models[currentIndex]);
-
-      document.getElementById("next-btn").addEventListener("click", nextModel);
-      document.getElementById("submit-btn").addEventListener("click", submitResponses);
-      document.getElementById("signout").addEventListener("click", () => {
-        fetch("/", {
-          method: "GET",
-        })
-        .then((response) => {
-          if (response.ok) {
-            window.location.href = "/"; // Redirect to login page after sign out
-          } else {
-            alert("Sign out failed.");
-          }
-        })
-        .catch((error) => console.error("Error during sign out:", error));
-      });
-
-            function handleOrientation(event) {
-        // Get the orientation angles from the device
-        const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;
-        const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;
-        const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;
-
-        if (currentModel) {
-          currentModel.rotation.order = "YXZ";
-
-          // Rotate the model based on landscape orientation (gamma for sideways tilt)
-          if (window.innerWidth > window.innerHeight) { // Detects landscape mode
-            currentModel.rotation.x = beta; // Adjust rotation based on device tilt
-            currentModel.rotation.z = -gamma; // Use gamma for left/right tilt
-          } else {
-            currentModel.rotation.x = gamma; // Adjust rotation based on device tilt
-            currentModel.rotation.z = alpha; // Use alpha for left/right tilt
-          }
-        }
-      }
-
-      // Listen for device orientation events
-      if (window.DeviceOrientationEvent) {
-        window.addEventListener("deviceorientation", handleOrientation, true);
-      } else {
-        console.log("Device orientation is not supported on this device.");
-      }
-
+      startContinuousRecognition(); // Start voice recognition when page loads
     </script>
   </body>
 </html>
