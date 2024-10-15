@@ -196,39 +196,46 @@
       });
 
       // Orientation Handling
-      function handleOrientation(event) {
-        const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;
-        const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;
-        const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;
+    // Update the handleOrientation function to adjust the model rotation based on orientation
+        function handleOrientation(event) {
+            const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0; // Rotation around the Z-axis
+            const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;     // Rotation around the X-axis
+            const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0; // Rotation around the Y-axis
 
-        if (currentModel) {
-          currentModel.rotation.order = "YXZ";
-          currentModel.rotation.x = beta;
-          currentModel.rotation.y = gamma;
-          currentModel.rotation.z = alpha;
+            if (currentModel) {
+                currentModel.rotation.order = "YXZ";
+                
+                // Rotate the model based on the device orientation
+                // You can adjust the factors below to get the desired rotation effect
+                currentModel.rotation.x = beta;   // Adjust rotation based on beta
+                currentModel.rotation.y = gamma;   // Adjust rotation based on gamma
+                currentModel.rotation.z = alpha;   // Adjust rotation based on alpha
+            }
         }
-      }
 
-      function updateModelOrientation() {
-        if (window.matchMedia("(orientation: landscape)").matches) {
-          if (currentModel) {
-            currentModel.rotation.x = 0; // Adjust rotation for landscape
-            currentModel.rotation.y = Math.PI / 4; // Rotate for better view in landscape
-          }
+        function updateModelOrientation() {
+            if (window.matchMedia("(orientation: landscape)").matches) {
+                if (currentModel) {
+                    // If in landscape mode, rotate the model further for a better view
+                    currentModel.rotation.x = 0; // Reset rotation for landscape
+                    currentModel.rotation.y = Math.PI / 4; // Rotate for better view in landscape
+                }
+            } else {
+                if (currentModel) {
+                    // Reset the rotation for portrait mode
+                    currentModel.rotation.x = 0; 
+                    currentModel.rotation.y = 0; 
+                }
+            }
+        }
+
+        // Add event listeners to handle device orientation and resize
+        if (window.DeviceOrientationEvent) {
+            window.addEventListener("deviceorientation", handleOrientation, true);
+            window.addEventListener("resize", updateModelOrientation);
         } else {
-          if (currentModel) {
-            currentModel.rotation.x = 0; // Reset rotation for portrait
-            currentModel.rotation.y = 0; // Reset for default view
-          }
+            console.log("Device orientation is not supported on this device.");
         }
-      }
-
-      if (window.DeviceOrientationEvent) {
-        window.addEventListener("deviceorientation", handleOrientation, true);
-        window.addEventListener("resize", updateModelOrientation);
-      } else {
-        console.log("Device orientation is not supported on this device.");
-      }
 
       // Continuous Voice Recognition
       function startContinuousRecognition() {
