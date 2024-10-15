@@ -25,7 +25,7 @@ const allModels = [
   { plateNo: "PL1", path: "./glbModels/pl1.glb", answer: "12" },
   { plateNo: "PL2", path: "./glbModels/pl2.glb", answer: "8" },
   { plateNo: "PL3", path: "./glbModels/pl3.glb", answer: "6" },
-  { plateNo: "PL4", path: "./glbModels/pl4.glb", answer: "29" },
+  { plateNo: "PL4", path: "./glbMpl13odels/pl4.glb", answer: "29" },
   { plateNo: "PL5", path: "./glbModels/pl5.glb", answer: "57" },
   { plateNo: "PL6", path: "./glbModels/pl6.glb", answer: "5" },
   { plateNo: "PL7", path: "./glbModels/pl7.glb", answer: "3" },
@@ -34,7 +34,7 @@ const allModels = [
   { plateNo: "PL10", path: "./glbModels/pl10.glb", answer: "2" },
   { plateNo: "PL11", path: "./glbModels/pl11.glb", answer: "12" },
   { plateNo: "PL12", path: "./glbModels/pl12.glb", answer: "97" },
-  { plateNo: "PL13", path: "./glbModels/pl13.glb", answer: "45" },
+  { plateNo: "PL13", path: "./glbModels/.glb", answer: "45" },
   // Add more models as needed
 ];
 
