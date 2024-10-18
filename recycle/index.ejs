@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Model Viewer with Fullscreen and Improved Lighting</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        position: relative;
+      }
+      canvas {
+        display: block;
+      }
+      .corner-buttons {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+        pointer-events: none;
+      }
+      .corner-buttons button,
+      .corner-buttons input {
+        pointer-events: auto;
+        width: 50px;
+        height: 50px;
+        font-size: 12px;
+        padding: 4px;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      }
+      .small-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 10px;
+        padding: 4px;
+      }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body
+    class="bg-purple-200 min-h-screen flex flex-col items-center justify-center p-4"
+  >
+    <canvas
+      id="modelViewer"
+      class="w-full h-auto max-h-2000 bg-gray-200 shadow-lg rounded-xl border border-gray-300"
+    ></canvas>
+
+    <div class="corner-buttons">
+      <button
+        id="fullscreen-btn"
+        class="bg-blue-500 text-white small-btn shadow hover:bg-blue-600 transition-all"
+        title="Fullscreen"
+      >
+        FS
+      </button>
+
+      <button
+        id="signout"
+        class="bg-red-500 text-white small-btn shadow hover:bg-red-600 transition-all"
+        title="Sign Out"
+      >
+        SO
+      </button>
+
+      <input
+        type="text"
+        id="user-input"
+        placeholder="Input"
+        class="p-2 border border-gray-300 rounded-md shadow-sm text-center w-12"
+        title="User Input"
+      />
+
+      <button
+        id="next-btn"
+        class="bg-blue-500 text-white small-btn shadow hover:bg-blue-600 transition-all"
+        title="Next"
+      >
+        Next
+      </button>
+
+      <button
+        id="submit-btn"
+        style="display: none"
+        class="bg-green-500 text-white small-btn shadow hover:bg-green-600 transition-all"
+        title="Submit"
+      >
+        Sub
+      </button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+            const models = <%- JSON.stringify(models) %>;
+            console.log("models"+models);
+            //variables
+            let userResponses = [];
+            let currentIndex = 0;
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('modelViewer'), antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            scene.background = new THREE.Color(0xffffff);
+            renderer.setClearColor(0xffffff);
+
+            const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+            scene.add(hemisphereLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(5, 10, 7.5).normalize();
+            scene.add(directionalLight);
+
+            let currentModel = null;
+
+
+            // <<<<<<-----------------Load the model (args are just the model)---------------
+            function loadModel(model) {
+              const loader = new THREE.GLTFLoader();
+              loader.load(model.path, (gltf) => {
+                if (currentModel) {
+                  scene.remove(currentModel);
+                }
+
+                const model = gltf.scene;
+                model.traverse((child) => {
+                  if (child.isMesh) {
+                    child.material.side = THREE.DoubleSide;
+                  }
+                });
+
+                const box = new THREE.Box3().setFromObject(model);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDimension = Math.max(size.x, size.y, size.z);
+
+                const scale = Math.max(0.5, 1 / maxDimension);
+                model.scale.set(scale, scale, scale);
+
+                model.position.set(0, 0, 0);
+                scene.add(model);
+                currentModel = model;
+
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.sub(center);
+
+                camera.position.z = Math.max(maxDimension * scale * 0.5, 3);
+
+                const animate = function () {
+                  renderer.render(scene, camera);
+                  requestAnimationFrame(animate);
+                };
+                animate();
+              }, undefined, (error) => {
+                console.error('An error occurred while loading the model:', error);
+              });
+            }
+      // -----------------Load the model (args are just the model)--------------->>>>
+
+
+
+        // <<<<-----------------voice the model (args are just the model)---------------
+
+        function startContinuousRecognition() {
+              const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+              const recognition = new SpeechRecognition();
+              recognition.interimResults = false;
+              recognition.lang = 'en-US';
+
+              recognition.onresult = (event) => {
+                let transcript = event.results[0][0].transcript.trim().toLowerCase();
+                console.log(`transcript ${transcript}`)
+                document.getElementById('user-input').value = transcript;
+                nextModel();
+              };
+
+              recognition.onerror = (event) => {
+                console.error("Voice recognition error:", event.error);
+              };
+
+              recognition.onend = () => {
+                recognition.start();
+              };
+
+              recognition.start();
+            }
+            // -----------------voice the model (args are just the model)--------------->>>>>>
+
+
+
+
+      //<<<<<< -----------------iterate the model (args are just the model)---------------
+            function nextModel() {
+              //get the input from the voice
+              const inputField = document.getElementById("user-input");
+              const userInput = inputField.value.trim();
+
+              if (userInput) {
+                userResponses[currentIndex] = {
+                  plateNo: models[currentIndex].plateNo,
+                  answer: userInput
+                };
+                inputField.value = "";
+              }
+              console.log("currentIndex before increment"+currentIndex);
+              currentIndex++;
+
+
+              if (currentIndex >= models.length) {
+                submitResponses(); // Ensure this is only called once the final model is reached
+                return;
+              } else if (currentIndex === models.length - 1) {
+                document.getElementById("next-btn").style.display = "none";
+                document.getElementById("submit-btn").style.display = "inline";
+              }
+              loadModel(models[currentIndex]);
+             
+      
+              }
+            
+            // -----------------iterate the model (args are just the model)--------------->>>>>>
+
+
+
+
+            //<<<<<< -----------------submit the input (args are just the model-----------------
+
+            function submitResponses() {
+              const inputField = document.getElementById("user-input");
+              const userInput = inputField.value.trim();
+
+              if (userInput) {
+                userResponses[currentIndex] = {
+                  plateNo: models[currentIndex].plateNo,
+                  answer: userInput
+                };
+                inputField.value = "";
+              }
+
+              fetch("/submit", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ responses: userResponses }),
+              })
+              .then((response) => response.json())
+              .then((data) => {
+                alert(`Blindness Type: ${data.blindnessType}, Intensity: ${data.intensity}`);
+              })
+              .catch((error) => console.error("Error submitting responses:", error));
+            }
+            // -----------------submit the model (args are just the model)--------------->>>>>>>>
+
+
+
+
+
+            // <<<<<<<-----------------orient the model (args are just the model)---------------
+            camera.position.set(0, 0, 5);
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.25;
+
+            window.addEventListener("resize", () => {
+              const width = window.innerWidth;
+              const height = window.innerHeight;
+              renderer.setSize(width, height);
+              camera.aspect = width / height;
+              camera.updateProjectionMatrix();
+            });
+            // Fullscreen functionality
+            const fullscreenButton = document.getElementById("fullscreen-btn");
+
+            fullscreenButton.addEventListener("click", () => {
+              if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+                fullscreenButton.textContent = "Exit Fullscreen";
+              } else {
+                if (document.exitFullscreen) {
+                  document.exitFullscreen();
+                  fullscreenButton.textContent = "Enter Fullscreen";
+                }
+              }
+            });
+
+            function handleOrientation(event) {
+                const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;
+                const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;
+                const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;
+
+                if (currentModel) {
+                    currentModel.rotation.order = "YXZ";
+                    // Adjust based on landscape or portrait mode
+                    if (window.innerWidth > window.innerHeight) { // Landscape mode
+                        currentModel.rotation.x = beta;
+                        currentModel.rotation.z = -gamma;
+                    } else { // Portrait mode
+                        currentModel.rotation.x = gamma;
+                        currentModel.rotation.z = alpha;
+                    }
+                }
+            }
+
+            if (window.DeviceOrientationEvent) {
+              window.addEventListener("deviceorientation", handleOrientation, true);
+            } else {
+              console.log("Device orientation is not supported on this device.");
+            }
+            // -----------------orient the model (args are just the model)--------------->>>>>>
+
+
+
+
+
+
+
+
+
+
+            loadModel(models[currentIndex]);
+            startContinuousRecognition();
+
+            document.getElementById("next-btn").addEventListener("click", nextModel);
+            document.getElementById("submit-btn").addEventListener("click", submitResponses);
+            document.getElementById("signout").addEventListener("click", () => {
+              fetch("/", {
+                method: "GET",
+              })
+              .then((response) => {
+                if (response.ok) {
+                  window.location.href = "/"; // Redirect to login page after sign out
+                } else {
+                  alert("Sign out failed.");
+                }
+              })
+              .catch((error) => console.error("Error during sign out:", error));
+            });
+    </script>
+  </body>
+</html>
