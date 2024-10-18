@@ -120,50 +120,91 @@
                   directionalLight.position.set(5, 10, 7.5).normalize();
                   scene.add(directionalLight);
 
-                  let currentModel = null;
+                  let originalModel = null; // Store the original model
+                let cloneModel = null; // Store the cloned model
 
-
-                  // <<<<<<-----------------Load the model (args are just the model)---------------
-                  function loadModel(model) {
+                // Function to load the model
+                function loadModel(model) {
                     const loader = new THREE.GLTFLoader();
                     loader.load(model.path, (gltf) => {
-                      if (currentModel) {
-                        scene.remove(currentModel);
-                      }
-
-                      const model = gltf.scene;
-                      model.traverse((child) => {
-                        if (child.isMesh) {
-                          child.material.side = THREE.DoubleSide;
+                        // Remove existing models from the scene
+                        if (originalModel) {
+                            scene.remove(originalModel);
                         }
-                      });
+                        if (cloneModel) {
+                            scene.remove(cloneModel);
+                        }
 
-                      const box = new THREE.Box3().setFromObject(model);
-                      const size = box.getSize(new THREE.Vector3());
-                      const maxDimension = Math.max(size.x, size.y, size.z);
+                        // Load original model
+                        originalModel = gltf.scene;
+                        originalModel.traverse((child) => {
+                            if (child.isMesh) {
+                                child.material.side = THREE.DoubleSide;
+                            }
+                        });
 
-                      const scale = Math.max(0.5, 1 / maxDimension);
-                      model.scale.set(scale, scale, scale);
+                        const box = new THREE.Box3().setFromObject(originalModel);
+                        const size = box.getSize(new THREE.Vector3());
+                        const maxDimension = Math.max(size.x, size.y, size.z);
 
-                      model.position.set(0, 0, 0);
-                      scene.add(model);
-                      currentModel = model;
+                        const scale = Math.max(0.5, 1 / maxDimension);
+                        originalModel.scale.set(scale, scale, scale);
 
-                      const center = box.getCenter(new THREE.Vector3());
-                      model.position.sub(center);
+                        // Center the original model
+                        const center = box.getCenter(new THREE.Vector3());
+                        originalModel.position.sub(center);
 
-                      camera.position.z = Math.max(maxDimension * scale * 0.5, 3);
+                        // Position the original model
+                        originalModel.position.set(-1, 0, 0); // Adjust this value as needed
+                        scene.add(originalModel);
 
-                      const animate = function () {
-                        renderer.render(scene, camera);
-                        requestAnimationFrame(animate);
-                      };
-                      animate();
+                        // Clone the original model
+                        cloneModel = originalModel.clone();
+                        cloneModel.position.set(1, 0, 0); // Position it to the right of the original
+                        scene.add(cloneModel);
+
+                        // Position the camera
+                        camera.position.z = Math.max(maxDimension * scale * 0.5, 3);
+
+                        // Start rendering
+                        const animate = function () {
+                            renderer.render(scene, camera);
+                            requestAnimationFrame(animate);
+                        };
+                        animate();
                     }, undefined, (error) => {
-                      console.error('An error occurred while loading the model:', error);
+                        console.error('An error occurred while loading the model:', error);
                     });
-                  }
-            // -----------------Load the model (args are just the model)--------------->>>>
+                }
+
+                // Update the handleOrientation function to apply rotation to both models
+                function handleOrientation(event) {
+                    const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0;
+                    const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;
+                    const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0;
+
+                    if (originalModel && cloneModel) {
+                        originalModel.rotation.order = "YXZ";
+                        cloneModel.rotation.order = "YXZ"; // Ensure the clone follows the same rotation
+
+                        // Adjust based on landscape or portrait mode
+                        if (window.innerWidth > window.innerHeight) { // Landscape mode
+                            originalModel.rotation.x = gamma;
+                            originalModel.rotation.z = -alpha;
+                            originalModel.rotation.y = beta;
+
+                            cloneModel.rotation.x = gamma;
+                            cloneModel.rotation.z = -alpha; // Same rotation for the clone
+                            cloneModel.rotation.y = beta; // Same rotation for the clone
+                        } else { // Portrait mode
+                            originalModel.rotation.x = gamma;
+                            originalModel.rotation.z = alpha;
+                            cloneModel.rotation.x = gamma;
+                            cloneModel.rotation.z = alpha; // Same rotation for the clone
+                        }
+                    }
+                }
+
 
 
 
@@ -291,33 +332,6 @@
                       }
                     }
                   });
-
-                  function handleOrientation(event) {
-                    const alpha = event.alpha ? THREE.Math.degToRad(event.alpha) : 0; // Rotation around the Z-axis
-                    const beta = event.beta ? THREE.Math.degToRad(event.beta) : 0;   // Rotation around the X-axis
-                    const gamma = event.gamma ? THREE.Math.degToRad(event.gamma) : 0; // Rotation around the Y-axis
-
-                    if (currentModel) {
-                        // Check window dimensions to determine orientation
-                        const isLandscape = window.innerWidth > window.innerHeight;
-
-                        // Set the rotation order to YXZ to match the device orientation
-                        currentModel.rotation.order = "YXZ";
-
-                        // Adjust the rotation based on orientation
-                        if (isLandscape) {
-                            // In landscape, we may want to adjust the rotation to keep it aligned
-                            currentModel.rotation.x = gamma;  // Adjust the rotation based on beta (X-axis)
-                            currentModel.rotation.y = beta ;  // Adjust for landscape orientation
-                            currentModel.rotation.z = -alpha; // Invert gamma (Y-axis)
-                        } else {
-                            // In portrait mode
-                            currentModel.rotation.x = beta;  // Adjust the rotation based on beta (X-axis)
-                            currentModel.rotation.y = gamma;  // Adjust the rotation based on alpha (Z-axis)
-                            currentModel.rotation.z = -alpha; // Invert gamma (Y-axis)
-                        }
-                    }
-                }
 
 
 
