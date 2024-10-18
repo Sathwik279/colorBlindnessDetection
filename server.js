@@ -34,7 +34,7 @@ const allModels = [
   { plateNo: "PL10", path: "./glbModels/pl10.glb", answer: "2" },
   { plateNo: "PL11", path: "./glbModels/pl11.glb", answer: "12" },
   { plateNo: "PL12", path: "./glbModels/pl12.glb", answer: "97" },
-  { plateNo: "PL13", path: "./glbModels/.glb", answer: "45" },
+  { plateNo: "PL13", path: "./glbModels/pl13.glb", answer: "45" },
   // Add more models as needed
 ];
 
@@ -57,7 +57,7 @@ app.post("/login", async (req, res) => {
 // Route to show the model test
 app.get("/test", (req, res) => {
   const shuffled = allModels.sort(() => 0.5 - Math.random());
-  const selectedModels = shuffled.slice(0, 5); // Select 5 random models
+  const selectedModels = shuffled.slice(0,5); // Select 5 random models
   res.render("index", { models: selectedModels });
 });
 
