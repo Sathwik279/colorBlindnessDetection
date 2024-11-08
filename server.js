@@ -23,15 +23,15 @@ app.use(
 // Array of model objects with their paths, answers, and plate numbers
 const allModels = [
   { plateNo: "PL1", path: "./glbModels/pl1.glb", answer: "12" },
-  { plateNo: "PL2", path: "./glbModels/pl2.glb", answer: "8" },
-  { plateNo: "PL3", path: "./glbModels/pl3.glb", answer: "6" },
+  // { plateNo: "PL2", path: "./glbModels/pl2.glb", answer: "8" },
+  // { plateNo: "PL3", path: "./glbModels/pl3.glb", answer: "6" },
   { plateNo: "PL4", path: "./glbModels/pl4.glb", answer: "29" },
   { plateNo: "PL5", path: "./glbModels/pl5.glb", answer: "57" },
-  { plateNo: "PL6", path: "./glbModels/pl6.glb", answer: "5" },
-  { plateNo: "PL7", path: "./glbModels/pl7.glb", answer: "3" },
+  // { plateNo: "PL6", path: "./glbModels/pl6.glb", answer: "5" },
+  // { plateNo: "PL7", path: "./glbModels/pl7.glb", answer: "3" },
   { plateNo: "PL8", path: "./glbModels/pl8.glb", answer: "15" },
   { plateNo: "PL9", path: "./glbModels/pl9.glb", answer: "74" },
-  { plateNo: "PL10", path: "./glbModels/pl10.glb", answer: "2" },
+  // { plateNo: "PL10", path: "./glbModels/pl10.glb", answer: "2" },
   { plateNo: "PL11", path: "./glbModels/pl11.glb", answer: "12" },
   { plateNo: "PL12", path: "./glbModels/pl12.glb", answer: "97" },
   { plateNo: "PL13", path: "./glbModels/pl13.glb", answer: "45" },
@@ -42,6 +42,11 @@ app.get("/", (req, res) => {
   res.render("login");
 });
 
+app.post("/log-transcript", async (req, res) => {
+  const transcript = req.body.transcript;
+  console.log(`transcript ${transcript}`);
+
+});
 app.post("/login", async (req, res) => {
   const username = req.body.username;
   const user = await User.create({
@@ -52,15 +57,19 @@ app.post("/login", async (req, res) => {
   req.session.username = username;
 
   // Redirect to /test
-  res.redirect("/test");
+  res.render("loggedIn");
 });
+
 // Route to show the model test
-app.get("/test", (req, res) => {
+app.get("/ishihara", (req, res) => {
   const shuffled = allModels.sort(() => 0.5 - Math.random());
   const selectedModels = shuffled.slice(0,5); // Select 5 random models
   res.render("index", { models: selectedModels });
 });
 
+app.get("vrGame", (req, res) => {
+  res.render("vrGame");
+});
 // Route to handle responses
 app.post("/submit", async (req, res) => {
   const finalResponses = req.body.responses; // Get the responses from the request

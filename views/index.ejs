@@ -164,7 +164,8 @@
                         scene.add(cloneModel);
 
                         // Position the camera
-                        camera.position.z = Math.max(maxDimension * scale * 0.5, 3);
+                        camera.position.z = Math.max(maxDimension * scale * 0.0000000005, 1.5); // Closer to the model
+
 
                         // Start rendering
                         const animate = function () {
@@ -189,11 +190,11 @@
 
                         // Adjust based on landscape or portrait mode
                         if (window.innerWidth > window.innerHeight) { // Landscape mode
-                            originalModel.rotation.x = gamma;
+                            originalModel.rotation.x = gamma+Math.PI/2-Math.PI/12;
                             originalModel.rotation.z = -alpha;
                             originalModel.rotation.y = beta;
 
-                            cloneModel.rotation.x = gamma;
+                            cloneModel.rotation.x = gamma+Math.PI/2-Math.PI/12;
                             cloneModel.rotation.z = -alpha; // Same rotation for the clone
                             cloneModel.rotation.y = beta; // Same rotation for the clone
                         } else { // Portrait mode
@@ -218,7 +219,15 @@
 
                     recognition.onresult = (event) => {
                       let transcript = event.results[0][0].transcript.trim().toLowerCase();
-                      console.log(`transcript ${transcript}`)
+                        console.log(`transcript ${transcript}`);
+                        fetch('/log-transcript', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ transcript }),
+                        })
+                       
                       document.getElementById('user-input').value = transcript;
                       nextModel();
                     };
