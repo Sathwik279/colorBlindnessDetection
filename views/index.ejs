@@ -211,37 +211,37 @@
 
               // <<<<-----------------voice the model (args are just the model)---------------
 
-              function startContinuousRecognition() {
-                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                    const recognition = new SpeechRecognition();
-                    recognition.interimResults = false;
-                    recognition.lang = 'en-US';
+                function startContinuousRecognition() {
+                  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                  const recognition = new SpeechRecognition();
+                  recognition.interimResults = false;
+                  recognition.lang = 'en-US';
 
-                    recognition.onresult = (event) => {
-                      let transcript = event.results[0][0].transcript.trim().toLowerCase();
-                        console.log(`transcript ${transcript}`);
-                        fetch('/log-transcript', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ transcript }),
-                        })
-                       
-                      document.getElementById('user-input').value = transcript;
-                      nextModel();
-                    };
+                  recognition.onresult = (event) => {
+                  let transcript = event.results[0][0].transcript.trim().toLowerCase();
+                  console.log(`transcript ${transcript}`);
+                  fetch('/log-transcript', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ transcript }),
+                  })
+                   
+                  document.getElementById('user-input').value = transcript;
+                  nextModel();
+                  };
 
-                    recognition.onerror = (event) => {
-                      console.error("Voice recognition error:", event.error);
-                    };
+                  recognition.onerror = (event) => {
+                  console.error("Voice recognition error:", event.error);
+                  };
 
-                    recognition.onend = () => {
-                      recognition.start();
-                    };
+                  recognition.onend = () => {
+                  recognition.start();
+                  };
 
-                    recognition.start();
-                  }
+                  recognition.start();
+                }
                   // -----------------voice the model (args are just the model)--------------->>>>>>
 
 

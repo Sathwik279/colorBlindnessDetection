@@ -2,7 +2,16 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
 const { User } = require("./models");
+const path = require('path')
 const PORT = process.env.PORT || 3000;
+
+// Serve static HTML project
+app.use('/static', express.static(path.join(__dirname, 'static')));
+
+// Serve public assets
+app.use(express.static(path.join(__dirname, 'public')));
+
+
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(express.urlencoded({ extended: true }));
@@ -38,9 +47,13 @@ const allModels = [
   // Add more models as needed
 ];
 
-app.get("/", (req, res) => {
-  res.render("login");
+app.get("/landing", (req, res) => {
+  res.render("landing");
 });
+
+app.get("/dynamic",(req,res)=>{
+  res.render("login");
+})
 
 app.post("/log-transcript", async (req, res) => {
   const transcript = req.body.transcript;
@@ -57,7 +70,7 @@ app.post("/login", async (req, res) => {
   req.session.username = username;
 
   // Redirect to /test
-  res.render("loggedIn");
+  res.redirect("/ishihara");
 });
 
 // Route to show the model test
@@ -67,9 +80,7 @@ app.get("/ishihara", (req, res) => {
   res.render("index", { models: selectedModels });
 });
 
-app.get("vrGame", (req, res) => {
-  res.render("vrGame");
-});
+
 // Route to handle responses
 app.post("/submit", async (req, res) => {
   const finalResponses = req.body.responses; // Get the responses from the request
