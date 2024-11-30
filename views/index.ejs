@@ -91,6 +91,7 @@
         const recognition = new SpeechRecognition();
         recognition.interimResults = false;
         recognition.lang = "en-US";
+        recognition.continuous = true; 
 
         recognition.onresult = (event) => {
           const transcript = event.results[0][0].transcript.trim().toLowerCase();
