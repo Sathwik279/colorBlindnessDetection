@@ -111,6 +111,12 @@
           reject(event.error); // Reject the promise if an error occurs
         };
 
+        recognition.onend = () => {
+        console.log('Speech recognition ended.');
+        recognition.start();  // Restart if you want continuous listening
+      };
+        
+
         recognition.start();
       });
     }
