@@ -85,6 +85,15 @@
       let userResponses = [];
       let modelsLen = models.length
 
+      navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        console.log("Microphone access granted.");
+      })
+      .catch(error => {
+        console.log("Microphone access error: ", error);
+        // Handle error, show a prompt for the user
+      });
+
       function recognizeSpeech() {
       return new Promise((resolve, reject) => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
