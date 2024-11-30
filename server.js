@@ -31,19 +31,19 @@ app.use(
 
 // Array of model objects with their paths, answers, and plate numbers
 const allModels = [
-  { plateNo: "PL1", path: "./glbModels/pl1.glb", answer: "12" },
+  { plateNo: "PL1", path: "/glbModels/pl1.glb", answer: "12" },
   // { plateNo: "PL2", path: "./glbModels/pl2.glb", answer: "8" },
   // { plateNo: "PL3", path: "./glbModels/pl3.glb", answer: "6" },
-  { plateNo: "PL4", path: "./glbModels/pl4.glb", answer: "29" },
-  { plateNo: "PL5", path: "./glbModels/pl5.glb", answer: "57" },
+  { plateNo: "PL4", path: "/glbModels/pl4.glb", answer: "29" },
+  { plateNo: "PL5", path: "/glbModels/pl5.glb", answer: "57" },
   // { plateNo: "PL6", path: "./glbModels/pl6.glb", answer: "5" },
   // { plateNo: "PL7", path: "./glbModels/pl7.glb", answer: "3" },
-  { plateNo: "PL8", path: "./glbModels/pl8.glb", answer: "15" },
-  { plateNo: "PL9", path: "./glbModels/pl9.glb", answer: "74" },
+  { plateNo: "PL8", path: "/glbModels/pl8.glb", answer: "15" },
+  // { plateNo: "PL9", path: "/glbModels/pl9.glb", answer: "74" },
   // { plateNo: "PL10", path: "./glbModels/pl10.glb", answer: "2" },
-  { plateNo: "PL11", path: "./glbModels/pl11.glb", answer: "12" },
-  { plateNo: "PL12", path: "./glbModels/pl12.glb", answer: "97" },
-  { plateNo: "PL13", path: "./glbModels/pl13.glb", answer: "45" },
+  { plateNo: "PL11", path: "/glbModels/pl11.glb", answer: "12" },
+  { plateNo: "PL12", path: "/glbModels/pl12.glb", answer: "97" },
+  { plateNo: "PL13", path: "/glbModels/pl13.glb", answer: "45" },
   // Add more models as needed
 ];
 
@@ -58,8 +58,8 @@ app.get("/dynamic",(req,res)=>{
 app.post("/log-transcript", async (req, res) => {
   const transcript = req.body.transcript;
   console.log(`transcript ${transcript}`);
-
 });
+
 app.post("/login", async (req, res) => {
   const username = req.body.username;
   const user = await User.create({
@@ -127,22 +127,6 @@ function evaluateResponses(userResponses) {
 function determineColorBlindnessType(redGreenDeficiency) {
   let blindnessType = "";
   let intensity = "";
-
-  // Example logic for determining blindness type based on correct responses
-  //   if (correctCount === 5) {
-  //     blindnessType = "Normal Vision";
-  //     intensity = "None";
-  //   } else if (correctCount >= 3) {
-  //     blindnessType = "Mild Color Blindness";
-  //     intensity = "Low";
-  //   } else if (correctCount === 1 || correctCount === 2) {
-  //     blindnessType = "Moderate Color Blindness";
-  //     intensity = "Medium";
-  //   } else {
-  //     blindnessType = "Severe Color Blindness";
-  //     intensity = "High";
-  //   }
-
   if (redGreenDeficiency) {
     blindnessType = "Red-Green Deficiency";
     intensity = "High";
